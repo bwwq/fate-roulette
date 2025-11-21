@@ -277,8 +277,13 @@ function processAITurn(room) {
 function handleUseSpirit(room, playerIndex, data) {
     const gs = room.gameState;
     const player = gs.players[playerIndex];
-    const opponent = gs.players[1 - playerIndex];
     const spiritIndex = data.spiritIndex;
+
+    // 验证 spiritIndex
+    if (typeof spiritIndex !== 'number' || spiritIndex < 0 || spiritIndex >= player.spirits.length) {
+        return;
+    }
+
     const spirit = player.spirits[spiritIndex];
 
     if (player.status.isHandcuffed) return;
@@ -302,12 +307,27 @@ function handleUseSpirit(room, playerIndex, data) {
         addLog(gs, `${player.name} 使用了 ${getSpiritName(spirit)}`);
     }
 
+    // 调用统一的灵物效果函数
+    applySpiritEffect(room, playerIndex, spirit, data, playerIndex);
+
+    broadcastGameState(room);
+}
+
+// 统一的灵物效果处理函数
+function applySpiritEffect(room, userIndex, spirit, params, decisionMakerIndex) {
+    const gs = room.gameState;
+    const player = gs.players[userIndex]; // 使用者
+    const opponent = gs.players[1 - userIndex]; // 对手
+    const isForced = userIndex !== decisionMakerIndex; // 是否是被强制使用
+
     switch (spirit) {
         case 'AMULET':
             player.status.amuletTurns = 2;
+            if (isForced) addLog(gs, '使用了神秘护符');
             break;
         case 'MIRROR':
             player.status.isMirrored = true;
+            if (isForced) addLog(gs, '使用了神秘护符');
             break;
         case 'GREEN_POTION':
             player.hp = Math.min(player.maxHp, player.hp + 1);
@@ -318,6 +338,7 @@ function handleUseSpirit(room, playerIndex, data) {
             addLog(gs, `${player.name} 下次伤害+1`);
             break;
         case 'ERASER':
+            // 目标始终是对手
             if (opponent.spirits.length > 0) {
                 const count = Math.min(2, opponent.spirits.length);
                 const removedNames = [];
@@ -326,7 +347,11 @@ function handleUseSpirit(room, playerIndex, data) {
                     const removed = opponent.spirits.splice(idx, 1)[0];
                     removedNames.push(getSpiritName(removed));
                 }
-                addLog(gs, `移除了对手的: ${removedNames.join(', ')}`);
+                if (isForced) {
+                    addLog(gs, `移除了对手 ${count} 个灵物`);
+                } else {
+                    addLog(gs, `移除了对手的: ${removedNames.join(', ')}`);
+                }
             }
             break;
         case 'CREATION':
@@ -352,9 +377,14 @@ function handleUseSpirit(room, playerIndex, data) {
         case 'MAGNIFYING_GLASS':
             if (gs.fateDeck.length === 0) gs.fateDeck = createFateDeck();
             const nextCard = gs.fateDeck[0];
-            sendPrivateInfo(room, playerIndex, `下一张牌是: ${getFateCardName(nextCard)}`);
-            // AI 记牌
-            if (room.ai && room.players[playerIndex].isAI) room.ai.knownNextFateCard = nextCard;
+            // 只有主动使用者才能看到私密信息
+            if (!isForced) {
+                sendPrivateInfo(room, userIndex, `下一张牌是: ${getFateCardName(nextCard)}`);
+                // AI 记牌
+                if (room.ai && room.players[userIndex].isAI) room.ai.knownNextFateCard = nextCard;
+            } else {
+                addLog(gs, '放大镜被强制使用了，但什么也没看清...');
+            }
             break;
         case 'HANDCUFFS':
             if (opponent.status.pillowImmunity > 0) {
@@ -366,10 +396,14 @@ function handleUseSpirit(room, playerIndex, data) {
             }
             break;
         case 'TELEPHONE':
+            if (isForced) {
+                addLog(gs, '电话占线... (强制使用失效)');
+                return;
+            }
             if (gs.fateDeck.length === 0) gs.fateDeck = createFateDeck();
-            const pos = Math.min(Math.max(1, parseInt(data.param) || 1), gs.fateDeck.length);
+            const pos = Math.min(Math.max(1, parseInt(params.param) || 1), gs.fateDeck.length);
             const cardAtPos = gs.fateDeck[pos - 1];
-            sendPrivateInfo(room, playerIndex, `第 ${pos} 张牌是: ${getFateCardName(cardAtPos)}`);
+            sendPrivateInfo(room, userIndex, `第 ${pos} 张牌是: ${getFateCardName(cardAtPos)}`);
             break;
         case 'PILLOW':
             drawSpirit(player, gs.spiritDeck);
@@ -389,8 +423,12 @@ function handleUseSpirit(room, playerIndex, data) {
             addLog(gs, '遥控器已激活');
             break;
         case 'GLOVES':
+            if (isForced) {
+                addLog(gs, '手套滑落了... (强制使用失效)');
+                return;
+            }
             // 逻辑修正：必须指定 targetSpiritIndex，否则随机（防错）
-            let stealIdx = data.targetSpiritIndex;
+            let stealIdx = params.targetSpiritIndex;
             if (typeof stealIdx !== 'number' || !opponent.spirits[stealIdx]) {
                 if (opponent.spirits.length > 0) stealIdx = Math.floor(Math.random() * opponent.spirits.length);
                 else stealIdx = -1;
@@ -401,69 +439,25 @@ function handleUseSpirit(room, playerIndex, data) {
                 if (player.spirits.length < 5) player.spirits.push(stolen);
                 const stolenName = getSpiritName(stolen);
                 addLog(gs, `${player.name} 偷走了一个灵物`);
-                sendPrivateInfo(room, playerIndex, `你偷到了: ${stolenName}`);
+                sendPrivateInfo(room, userIndex, `你偷到了: ${stolenName}`);
             }
             break;
         case 'RADIO':
+            if (isForced) {
+                addLog(gs, '信号干扰... (强制使用失效)');
+                return;
+            }
             // 逻辑修正：必须指定 targetSpiritIndex，否则无效
-            if (typeof data.targetSpiritIndex === 'number' && opponent.spirits[data.targetSpiritIndex]) {
-                const forcedSpirit = opponent.spirits[data.targetSpiritIndex];
+            if (typeof params.targetSpiritIndex === 'number' && opponent.spirits[params.targetSpiritIndex]) {
+                const forcedSpirit = opponent.spirits[params.targetSpiritIndex];
                 addLog(gs, `强制对手使用了 ${getSpiritName(forcedSpirit)}`);
-                opponent.spirits.splice(data.targetSpiritIndex, 1);
-                // 强制使用时，决策者是 player (发起者)
-                applyForcedSpiritEffect(room, 1 - playerIndex, forcedSpirit, playerIndex);
+                opponent.spirits.splice(params.targetSpiritIndex, 1);
+
+                // 强制使用时，决策者是 userIndex (发起者)
+                // 被强制者是 opponent (1 - userIndex)
+                applySpiritEffect(room, 1 - userIndex, forcedSpirit, {}, userIndex);
             }
             break;
-    }
-
-    broadcastGameState(room);
-}
-
-function applyForcedSpiritEffect(room, userIndex, spirit, decisionMakerIndex) {
-    const gs = room.gameState;
-    const player = gs.players[userIndex]; // 使用者（被强制的一方）
-    // const decisionMaker = gs.players[decisionMakerIndex]; // 决策者（发起强制的一方）
-
-    // 简化处理：对于需要参数的灵物，这里暂时随机或默认，
-    // 因为前端交互太复杂（需要发起者在强制使用时就填好参数，或者二次交互）
-    // 我们的 AI 逻辑里已经尽量填了参数，但真人玩家的 RADIO 交互目前只选了灵物
-    // 为了体验，我们让随机性接管复杂参数，或者默认值
-
-    switch (spirit) {
-        case 'GREEN_POTION': player.hp = Math.min(player.maxHp, player.hp + 1); addLog(gs, `${player.name} 恢复了1点生命`); break;
-        case 'RED_POTION': player.status.redPotionBonus += 1; addLog(gs, `${player.name} 下次伤害+1`); break;
-        case 'CREATION': drawSpirit(player, gs.spiritDeck); drawSpirit(player, gs.spiritDeck); addLog(gs, `${player.name} 获得了2个灵物`); break;
-        case 'WHITE_POTION':
-            const r = Math.random();
-            if (r < 0.49) { player.hp = Math.min(player.maxHp, player.hp + 1); addLog(gs, '白药水: 恢复了1点生命'); }
-            else if (r < 0.98) { takeDamage(player, 1, gs); addLog(gs, '白药水: 失去了1点生命'); }
-            else if (r < 0.99) { player.hp = Math.min(player.maxHp, player.hp + 2); addLog(gs, '白药水: 大恢复！+2生命'); }
-            else { takeDamage(player, 2, gs); addLog(gs, '白药水: 大失败！-2生命'); }
-            break;
-        case 'CONTRACT': takeDamage(player, 2, gs); player.status.hasContract = true; addLog(gs, '签订契约'); break;
-        case 'PILLOW':
-            drawSpirit(player, gs.spiritDeck); drawSpirit(player, gs.spiritDeck); drawSpirit(player, gs.spiritDeck);
-            player.status.skipNextTurn = true; player.status.pillowImmunity = 3;
-            addLog(gs, '获得3个灵物，跳过下回合');
-            break;
-        case 'AMULET': player.status.amuletTurns = 2; addLog(gs, '使用了神秘护符'); break;
-        case 'MIRROR': player.status.isMirrored = true; addLog(gs, '使用了神秘护符'); break;
-        case 'ERASER':
-            // 这里的 opponent 是相对于 user (被强制者) 的对手，也就是 decisionMaker
-            const target = gs.players[decisionMakerIndex];
-            if (target.spirits.length > 0) {
-                const count = Math.min(2, target.spirits.length);
-                for (let i = 0; i < count; i++) {
-                    const idx = Math.floor(Math.random() * target.spirits.length);
-                    target.spirits.splice(idx, 1);
-                }
-                addLog(gs, `移除了对手 ${count} 个灵物`);
-            }
-            break;
-        // 复杂灵物降级处理
-        case 'GLOVES': addLog(gs, '手套滑落了... (强制使用失效)'); break;
-        case 'TELEPHONE': addLog(gs, '电话占线... (强制使用失效)'); break;
-        case 'RADIO': addLog(gs, '信号干扰... (强制使用失效)'); break;
     }
 }
 
@@ -482,7 +476,13 @@ function handleUseFateCard(room, playerIndex, targetType) {
 }
 
 function drawFateCard(gs, player) {
-    if (gs.fateDeck.length === 0) gs.fateDeck = createFateDeck();
+    if (gs.fateDeck.length === 0) {
+        gs.fateDeck = createFateDeck();
+        // 每次洗牌都显示牌堆组成
+        const composition = getDeckComposition(gs.fateDeck);
+        const compositionText = formatDeckComposition(composition);
+        addLog(gs, `🔄 牌堆已空，重新洗牌 (共${gs.fateDeck.length}张): ${compositionText}`);
+    }
 
     if (player.status.shufflerEffect) {
         player.status.shufflerEffect = false;

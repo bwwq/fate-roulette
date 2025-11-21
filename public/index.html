@@ -12,6 +12,11 @@
 </head>
 
 <body>
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+        🌓
+    </button>
+
     <!-- Main Menu -->
     <div id="mainMenu" class="screen active">
         <div class="title-container">
@@ -64,9 +69,9 @@
         <h2 class="modal-title">加入房间</h2>
         <div class="menu-options">
             <input type="text" id="roomIdInput" class="btn" placeholder="输入房间号"
-                style="text-align: center; cursor: text; background: var(--bg-main);">
+                style="text-align: center; cursor: text; background: var(--bg-card);">
             <input type="text" id="playerNameInput" class="btn" placeholder="输入你的名字"
-                style="text-align: center; cursor: text; background: var(--bg-main);">
+                style="text-align: center; cursor: text; background: var(--bg-card);">
             <button class="btn btn-primary" onclick="joinRoomWithId()">加入</button>
         </div>
     </div>
@@ -135,7 +140,9 @@
         </div>
 
         <div class="action-bar">
-            <button class="btn btn-fate" onclick="useFateCard()">使用命运卡牌</button>
+            <button class="btn" onclick="showRulesInGame()" style="margin-right: auto;">📖 规则</button>
+            <button class="btn btn-primary btn-fate" onclick="useFateCard()">使用命运卡牌</button>
+            <button class="btn btn-danger" onclick="leaveRoom()" style="margin-left: auto;">离开</button>
         </div>
     </div>
 

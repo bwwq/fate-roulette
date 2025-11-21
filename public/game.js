@@ -15,10 +15,12 @@ let gameState = null;
 let waitingForTarget = false;
 let waitingForSpiritTarget = false;
 let activeSpiritIndex = null;
+let stats = { wins: 0, losses: 0 };
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
     loadStats();
+    initTheme();
 });
 
 // 复制房间号功能
@@ -121,6 +123,12 @@ function handleWebSocketMessage(data) {
         case 'game_update':
             gameMode = 'online';
             gameState = data.gameState;
+
+            // 重置交互状态，防止残留
+            activeSpiritIndex = null;
+            waitingForSpiritTarget = false;
+            waitingForTarget = false;
+
             showScreen('gameScreen');
             updateGameDisplay();
             checkGameOver();
@@ -158,6 +166,12 @@ function updateGameDisplay() {
 
     document.getElementById('fateDeckCount').textContent = gameState.fateDeck.length;
 
+    // 命运牌堆悬浮提示
+    const deckEl = document.getElementById('fateDeck');
+    if (deckEl) {
+        deckEl.title = `剩余 ${gameState.fateDeck.length} 张命运卡牌`;
+    }
+
     const isMyTurn = gameState.currentPlayer === (gameState.playerIndex || 0);
     const ind = document.getElementById('turnIndicator');
     ind.textContent = isMyTurn ? '你的回合' : '对手回合';
@@ -188,24 +202,70 @@ function updateHpBar(id, current, max) {
     }
 }
 
-function updateSpirits(id, spirits, isSelf) {
-    const container = document.getElementById(id);
+function updateSpirits(containerId, spirits, isPlayer) {
+    const container = document.getElementById(containerId);
     container.innerHTML = '';
-    spirits.forEach((s, i) => {
+
+    const spiritDescriptions = {
+        'AMULET': '护身符\n抵挡1点伤害，超过1点则破碎并双倍',
+        'MIRROR': '镜子\n反弹命运卡牌效果，伤害+1',
+        'REMOTE_CONTROL': '遥控器\n回合结束后对手被迫对自己使用卡牌',
+        'ERASER': '橡皮擦\n随机移除对手最多2个灵物',
+        'GLOVES': '手套\n偷取对手一个灵物',
+        'GREEN_POTION': '绿药水\n恢复1点生命',
+        'CREATION': '无中生有\n获得2个灵物',
+        'MUSHROOM': '蘑菇\n下次抽牌随机变化',
+        'WHITE_POTION': '白药水\n49%回1血/49%扣1血/1%回2血/1%扣2血',
+        'SHUFFLER': '洗牌器\n下次抽牌位置互换',
+        'MAGNIFYING_GLASS': '放大镜\n查看下一张牌',
+        'RED_POTION': '红药水\n下次伤害+1',
+        'HANDCUFFS': '手铐\n对手下回合无法使用灵物',
+        'TELEPHONE': '电话\n查看指定位置的牌',
+        'PILLOW': '枕头\n获得3灵物，跳过下回合，3回合免疫手铐',
+        'CONTRACT': '契约书\n扣2血，死亡时1血存活+最终回合',
+        'RADIO': '无线电\n强制对手使用灵物',
+        'HIDDEN': '神秘护符\n未知的灵物...'
+    };
+
+    spirits.forEach((spirit, index) => {
         const card = document.createElement('div');
-        card.className = 'spirit-card';
-        if (isSelf && gameState.currentPlayer === (gameState.playerIndex || 0)) card.classList.add('clickable');
+        card.className = 'card spirit-card';
+        card.innerHTML = `<div class="spirit-icon">${getSpiritIcon(spirit)}</div><div class="spirit-name">${SPIRIT_NAMES[spirit] || spirit}</div>`;
 
-        if (!isSelf && waitingForSpiritTarget) {
+        // 添加悬浮提示
+        card.title = spiritDescriptions[spirit] || spirit;
+
+        if (isPlayer) {
+            card.classList.add('clickable');
+            card.onclick = () => useSpirit(index);
+            if (activeSpiritIndex === index) card.classList.add('selected');
+        } else if (waitingForSpiritTarget) {
             card.classList.add('target-candidate');
-            card.onclick = () => selectSpiritTarget(i);
-        } else if (isSelf) {
-            card.onclick = () => useSpirit(i);
+            card.onclick = () => selectSpiritTarget(index);
         }
-
-        card.innerHTML = `<div class="spirit-icon">${getSpiritIcon(s)}</div><div class="spirit-name">${SPIRIT_NAMES[s] || s}</div>`;
         container.appendChild(card);
     });
+}
+
+function showRulesInGame() {
+    const rulesScreen = document.getElementById('rulesScreen');
+    const gameScreen = document.getElementById('gameScreen');
+
+    // 显示规则界面（作为覆盖层）
+    rulesScreen.classList.add('active');
+    rulesScreen.style.zIndex = '1000'; // 确保在游戏界面之上
+
+    // 修改返回按钮的行为
+    const closeBtn = document.querySelector('#rulesScreen .btn-back');
+    if (closeBtn) {
+        const originalOnClick = closeBtn.onclick;
+        closeBtn.onclick = () => {
+            rulesScreen.classList.remove('active');
+            rulesScreen.style.zIndex = '';
+            // 恢复原来的返回功能
+            closeBtn.onclick = showMainMenu;
+        };
+    }
 }
 
 function getSpiritIcon(s) {
@@ -253,6 +313,8 @@ function useSpirit(index) {
         const pos = prompt('你想查看第几张牌？(1-10)', '1');
         if (!pos) return;
         sendAction('use_spirit', { spiritIndex: index, param: parseInt(pos) });
+        activeSpiritIndex = null; // Reset
+        waitingForSpiritTarget = false; // Reset
     } else if (spirit === 'GLOVES' || spirit === 'RADIO') {
         activeSpiritIndex = index;
         waitingForSpiritTarget = true;
@@ -260,6 +322,8 @@ function useSpirit(index) {
         updateGameDisplay();
     } else {
         sendAction('use_spirit', { spiritIndex: index });
+        activeSpiritIndex = null; // Reset
+        waitingForSpiritTarget = false; // Reset
     }
 }
 
@@ -290,6 +354,11 @@ function sendAction(type, payload) {
     }
 }
 
+function leaveRoom() {
+    if (ws) { ws.send(JSON.stringify({ type: 'leave_room' })); ws.close(); }
+    showMainMenu();
+}
+
 function checkGameOver() {
     if (gameState.gameOver) {
         const winner = gameState.players[gameState.winner];
@@ -308,12 +377,6 @@ function returnToMenu() {
     showMainMenu();
 }
 
-function leaveRoom() {
-    if (ws) { ws.send(JSON.stringify({ type: 'leave_room' })); ws.close(); }
-    showMainMenu();
-}
-
-let stats = { wins: 0, losses: 0 };
 function loadStats() { const s = localStorage.getItem('stats'); if (s) stats = JSON.parse(s); }
 function saveStats() { localStorage.setItem('stats', JSON.stringify(stats)); }
 function updateStatsDisplay() {
@@ -321,4 +384,28 @@ function updateStatsDisplay() {
     document.getElementById('lossCount').textContent = stats.losses;
     const t = stats.wins + stats.losses;
     document.getElementById('winRate').textContent = t ? ((stats.wins / t) * 100).toFixed(1) + '%' : '0%';
+}
+
+// Theme Management
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        const toggleBtn = document.querySelector('.theme-toggle');
+        if (toggleBtn) toggleBtn.textContent = '☀️';
+    }
+}
+
+function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+
+    const toggleBtn = document.querySelector('.theme-toggle');
+    if (toggleBtn) {
+        toggleBtn.textContent = newTheme === 'light' ? '☀️' : '🌓';
+    }
 }

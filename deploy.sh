@@ -40,19 +40,40 @@ if ! command -v pm2 &> /dev/null; then
     npm install -g pm2
 fi
 
-# 4. 创建应用目录
-echo -e "${GREEN}[4/7] 创建应用目录...${NC}"
+# 4. 准备应用目录
+echo -e "${GREEN}[4/7] 准备应用目录...${NC}"
 APP_DIR="/var/www/fate-roulette"
+BACKUP_DIR="/var/www/fate-roulette_backups"
+
+# 如果已存在，先备份
+if [ -d "$APP_DIR" ]; then
+    echo -e "${YELLOW}检测到旧版本，正在备份...${NC}"
+    mkdir -p $BACKUP_DIR
+    TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+    # 仅备份代码，排除 node_modules 以节省空间
+    tar --exclude='node_modules' -czf "$BACKUP_DIR/backup_$TIMESTAMP.tar.gz" -C "$APP_DIR" .
+    echo -e "${GREEN}备份已保存至: $BACKUP_DIR/backup_$TIMESTAMP.tar.gz${NC}"
+fi
+
 mkdir -p $APP_DIR
 
-# 5. 复制文件（假设脚本在项目目录中运行）
+# 5. 复制文件（覆盖更新）
 echo -e "${GREEN}[5/7] 复制应用文件...${NC}"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cp -r $SCRIPT_DIR/* $APP_DIR/
+
+# 使用 rsync 进行增量更新，排除不必要的文件
+if command -v rsync &> /dev/null; then
+    rsync -av --exclude='node_modules' --exclude='.git' --exclude='deploy.sh' "$SCRIPT_DIR/" "$APP_DIR/"
+else
+    # 降级方案
+    cp -r "$SCRIPT_DIR/"* "$APP_DIR/"
+fi
+
 cd $APP_DIR
 
 # 6. 安装依赖
-echo -e "${GREEN}[6/7] 安装 NPM 依赖...${NC}"
+echo -e "${GREEN}[6/7] 安装/更新 NPM 依赖...${NC}"
+# 清理缓存并重新安装，确保依赖一致性
 npm install --production
 
 # 7. 配置防火墙
@@ -62,18 +83,22 @@ if command -v ufw &> /dev/null; then
     ufw --force enable
 fi
 
-# 8. 启动应用
-echo -e "${GREEN}启动应用...${NC}"
-pm2 stop fate-roulette 2>/dev/null || true
-pm2 delete fate-roulette 2>/dev/null || true
-pm2 start server.js --name "fate-roulette"
+# 8. 启动/重启应用
+echo -e "${GREEN}正在重启应用...${NC}"
+# 使用 reload 实现零停机重启（如果支持），否则 restart
+if pm2 list | grep -q "fate-roulette"; then
+    pm2 reload fate-roulette
+else
+    pm2 start server.js --name "fate-roulette"
+fi
+
 pm2 startup
 pm2 save
 
 # 9. 显示状态
 echo ""
 echo -e "${GREEN}================================${NC}"
-echo -e "${GREEN}部署完成！${NC}"
+echo -e "${GREEN}部署/更新完成！${NC}"
 echo -e "${GREEN}================================${NC}"
 echo ""
 pm2 status

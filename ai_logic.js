@@ -21,7 +21,7 @@ class AIPlayer {
         const me = gameState.players[myIndex];
         const opponent = gameState.players[1 - myIndex];
 
-        // 模拟思考时间
+        // 模拟思考时�?
         // 在实际服务器中，我们直接返回决策，延时由调用者控制或前端动画处理
 
         // 1. 检查是否被手铐
@@ -59,7 +59,7 @@ class AIPlayer {
             return actionData;
         }
 
-        // 3. 默认使用命运卡
+        // 3. 默认使用命运�?
         return { action: 'use_fate_card', target: this.chooseFateCardTarget(gameState, myIndex) };
     }
 
@@ -74,7 +74,7 @@ class AIPlayer {
         me.spirits.forEach((spirit, i) => {
             let score = 0;
 
-            // 基础评分逻辑 (移植自 Python ExpertAIPlayer)
+            // 基础评分逻辑 (移植�?Python ExpertAIPlayer)
             if (spirit === 'GREEN_POTION') score += (me.maxHp - me.hp) * 40;
             else if (spirit === 'ERASER') score += opponent.spirits.length * 25;
             else if (spirit === 'GLOVES') {
@@ -109,7 +109,7 @@ class AIPlayer {
                 if (['AMULET', 'MIRROR', 'GREEN_POTION'].includes(spirit)) score *= 1.8;
             }
 
-            // 避免连续使用遥控器/手铐
+            // 避免连续使用遥控�?手铐
             if (['REMOTE_CONTROL', 'HANDCUFFS'].includes(spirit) &&
                 gameState.lastSpiritUsedByPlayer &&
                 gameState.lastSpiritUsedByPlayer[myIndex] === spirit) {
@@ -168,7 +168,7 @@ class AIPlayer {
             else if (spirit === "WHITE_POTION") score = opponent.hp <= 2 ? 120 : 30;
             else if (spirit === "GREEN_POTION" && opponent.hp >= opponent.maxHp) score = 80; // 满血喝药浪费
             else if (spirit === "CREATION" && opponent.spirits.length >= MAX_SPIRITS) score = 70; // 爆牌
-            else if (spirit === "GLOVES") score = -100; // 偷我？不行
+            else if (spirit === "GLOVES") score = -100; // 偷我？不�?
             else if (HIDDEN_SPIRITS.includes(spirit)) score = -50;
             else if (["ERASER", "HANDCUFFS", "REMOTE_CONTROL", "RADIO"].includes(spirit)) score = -200; // 对我用？不行
             else score = 10;
@@ -182,10 +182,10 @@ class AIPlayer {
         return maxScore > 20 ? bestIdx : null;
     }
 
-    // Hell AI 功能：更新记牌
+    // Hell AI 功能：更新记�?
     updateDeckKnowledge(deck) {
-        // 简化：只记录剩余的牌
-        // 实际逻辑需要更复杂的追踪，这里简化为每次洗牌后重置
+        // 简化：只记录剩余的�?
+        // 实际逻辑需要更复杂的追踪，这里简化为每次洗牌后重�?
     }
 }
 
