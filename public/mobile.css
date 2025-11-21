@@ -1,0 +1,356 @@
+/* ========================================
+   移动端适配 (Mobile Responsive)
+   ======================================== */
+
+/* 平板及以下 (768px) */
+@media (max-width: 768px) {
+    .game-title {
+        font-size: 3rem;
+    }
+
+    .game-subtitle {
+        font-size: 1rem;
+        letter-spacing: 0.2em;
+    }
+
+    .game-container {
+        padding: 16px;
+        padding-bottom: 120px;
+    }
+
+    .center-area {
+        padding: 0 16px;
+        min-height: 120px;
+    }
+
+    .player-area {
+        padding: 16px;
+    }
+
+    .player-header {
+        margin-bottom: 12px;
+    }
+
+    .player-name {
+        font-size: 1rem;
+    }
+
+    .hp-heart {
+        font-size: 1.2rem;
+    }
+
+    .spirit-card {
+        width: 60px;
+        height: 80px;
+    }
+
+    .spirit-icon {
+        font-size: 1.5rem;
+    }
+
+    .spirit-name {
+        font-size: 0.6rem;
+    }
+
+    .spirits-row {
+        gap: 8px;
+        padding: 8px;
+        min-height: 90px;
+    }
+
+    .deck-card {
+        width: 70px;
+        height: 100px;
+        font-size: 2rem;
+    }
+
+    .game-log {
+        width: 100%;
+        max-width: 280px;
+        height: 100px;
+        font-size: 0.8rem;
+    }
+
+    .action-bar {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .btn-fate {
+        font-size: 1rem;
+        padding: 12px 32px;
+    }
+
+    .btn {
+        padding: 10px 24px;
+        font-size: 0.9rem;
+        min-width: 100px;
+    }
+}
+
+/* 手机端 (480px) */
+@media (max-width: 480px) {
+    body {
+        font-size: 14px;
+    }
+
+    .game-title {
+        font-size: 2.5rem;
+    }
+
+    .game-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .game-container {
+        padding: 12px;
+        padding-bottom: 100px;
+    }
+
+    .center-area {
+        flex-direction: column;
+        padding: 12px 8px;
+        gap: 16px;
+        min-height: auto;
+    }
+
+    .deck-area {
+        order: 1;
+    }
+
+    .turn-badge {
+        order: 2;
+        font-size: 0.85rem;
+        padding: 8px 16px;
+    }
+
+    .game-log {
+        order: 3;
+        width: 100%;
+        max-width: 100%;
+        height: 80px;
+        font-size: 0.75rem;
+        padding: 12px;
+    }
+
+    .player-area {
+        padding: 12px;
+    }
+
+    .player-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .player-info {
+        width: 100%;
+    }
+
+    .player-name {
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+    }
+
+    .hp-bar {
+        gap: 6px;
+        margin-top: 4px;
+    }
+
+    .hp-heart {
+        font-size: 1.1rem;
+    }
+
+    .status-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 4px;
+    }
+
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+    }
+
+    .spirit-card {
+        width: 56px;
+        height: 72px;
+        flex-shrink: 0;
+    }
+
+    .spirit-icon {
+        font-size: 1.3rem;
+        margin-bottom: 2px;
+    }
+
+    .spirit-name {
+        font-size: 0.55rem;
+        line-height: 1.1;
+    }
+
+    .spirits-row {
+        gap: 6px;
+        padding: 6px;
+        min-height: 80px;
+    }
+
+    .deck-card {
+        width: 60px;
+        height: 85px;
+        font-size: 1.8rem;
+        border-width: 2px;
+    }
+
+    .deck-count {
+        width: 24px;
+        height: 24px;
+        font-size: 0.8rem;
+        bottom: -10px;
+        right: -10px;
+    }
+
+    .action-bar {
+        padding: 12px 8px;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .btn-fate {
+        font-size: 0.9rem;
+        padding: 10px 24px;
+        width: 100%;
+        order: 1;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        min-width: 80px;
+    }
+
+    .btn-back {
+        top: 16px;
+        left: 16px;
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+
+    .theme-toggle {
+        top: 16px;
+        right: 16px;
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .modal-content {
+        padding: 24px;
+        width: 95%;
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .menu-options {
+        max-width: 280px;
+        gap: 1rem;
+    }
+
+    /* 规则页面优化 */
+    .rules-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .rule-card {
+        padding: 12px;
+    }
+}
+
+/* 超小屏幕 (iPhone SE 等, 375px) */
+@media (max-width: 375px) {
+    .game-title {
+        font-size: 2rem;
+    }
+
+    .spirit-card {
+        width: 50px;
+        height: 66px;
+    }
+
+    .spirit-icon {
+        font-size: 1.2rem;
+    }
+
+    .spirit-name {
+        font-size: 0.5rem;
+    }
+
+    .spirits-row {
+        gap: 5px;
+        padding: 5px;
+    }
+
+    .player-name {
+        font-size: 0.85rem;
+    }
+
+    .hp-heart {
+        font-size: 1rem;
+    }
+
+    .deck-card {
+        width: 50px;
+        height: 70px;
+        font-size: 1.5rem;
+    }
+
+    .game-log {
+        height: 70px;
+        font-size: 0.7rem;
+        padding: 10px;
+    }
+}
+
+/* 横屏模式优化 */
+@media (max-height: 600px) and (orientation: landscape) {
+    .game-container {
+        padding: 8px;
+        padding-bottom: 80px;
+    }
+
+    .center-area {
+        min-height: 80px;
+        padding: 0 12px;
+    }
+
+    .player-area {
+        padding: 10px;
+    }
+
+    .spirits-row {
+        min-height: 70px;
+        padding: 6px;
+    }
+
+    .spirit-card {
+        width: 50px;
+        height: 65px;
+    }
+
+    .game-log {
+        height: 60px;
+    }
+
+    .action-bar {
+        padding: 10px;
+    }
+
+    .btn-fate {
+        padding: 8px 20px;
+    }
+}
