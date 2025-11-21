@@ -19,7 +19,7 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/你的用户名/fate-roulette.git
+git clone https://github.com/bwwq/fate-roulette.git
 cd fate-roulette
 
 # 2. 安装依赖
