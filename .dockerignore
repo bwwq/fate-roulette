@@ -1,0 +1,28 @@
+# 依赖
+node_modules/
+
+# 日志
+*.log
+logs/
+
+# 环境变量
+.env
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# 临时文件
+*.tmp
+*.temp
+
+# PM2
+.pm2/
+
+# 备份
+*.backup
+*.bak

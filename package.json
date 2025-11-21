@@ -1,0 +1,20 @@
+{
+  "name": "fate-roulette-web",
+  "version": "1.0.0",
+  "description": "命运轮盘 - Web版卡牌对战游戏",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": ["game", "card", "multiplayer", "websocket"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

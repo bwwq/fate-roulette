@@ -1,0 +1,69 @@
+# 依赖目录
+node_modules/
+
+# 日志文件
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 临时文件
+*.tmp
+*.temp
+*.cache
+
+# PM2
+.pm2/
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# 构建输出
+dist/
+build/
+
+# 测试覆盖率
+coverage/
+.nyc_output/
+
+# 备份文件
+*.backup
+*.bak
+*.old
+
+# Python 相关（如果有）
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+
+# 数据文件
+*.dat
+*.json.bak
+fate_game_stats.json
+fate_game_progress.dat

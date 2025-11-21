@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  fate-roulette:
+    build: .
+    container_name: fate-roulette
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - fate-network
+
+networks:
+  fate-network:
+    driver: bridge
